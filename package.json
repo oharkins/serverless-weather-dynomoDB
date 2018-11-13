@@ -1,0 +1,14 @@
+{
+  "name": "lamdacronweather",
+  "version": "1.0.0",
+  "description": "",
+  "main": "chron.js",
+  "scripts": {
+    "test": "module.exports.getWeather"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "request": "^2.88.0"
+  }
+}

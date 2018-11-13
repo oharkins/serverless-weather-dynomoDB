@@ -1,0 +1,59 @@
+service: Lambda-CRON-Weather
+
+#frameworkVersion: ">=1.1.0 <2.0.0"
+
+provider:
+  name: aws
+  stage: dev
+  region: us-west-2
+  runtime: nodejs6.10
+  environment:
+    WEATHER_APPID: YOUR_APPID_HERE
+    HANDLER_LOCATION: ${self:service}-${opt:stage, self:provider.stage}
+    DYNAMODB_TABLE: ${self:service}-${opt:stage, self:provider.stage}
+  iamRoleStatements:
+    - Effect: Allow
+      Action:
+        - dynamodb:Query
+        - dynamodb:Scan
+        - dynamodb:GetItem
+        - dynamodb:PutItem
+        - dynamodb:UpdateItem
+        - dynamodb:DeleteItem
+        - lambda:InvokeFunction
+      Resource: 
+        - "arn:aws:dynamodb:${opt:region, self:provider.region}:*:table/${self:provider.environment.DYNAMODB_TABLE}"
+        - "arn:aws:lambda:${opt:region, self:provider.region}:*:function:${self:service}-${opt:stage, self:provider.stage}-getWeather"
+
+functions:
+  getWeather:
+    handler: chron.getWeather
+    
+  cron_launcher:
+    handler: chron.cron_launcher
+    events:
+      - schedule: 
+          description: 'Gathers Weather 1 time per hour and stores it in DynomoDb'
+          rate: rate(1 hour)
+          enabled: true
+
+resources:
+  Resources:
+    TodosDynamoDbTable:
+      Type: 'AWS::DynamoDB::Table'
+      DeletionPolicy: Retain
+      Properties:
+        AttributeDefinitions:
+          - AttributeName: id
+            AttributeType: N
+          - AttributeName: dt
+            AttributeType: N
+        KeySchema:
+          - AttributeName: id
+            KeyType: HASH
+          - AttributeName: dt
+            KeyType: RANGE
+        ProvisionedThroughput:
+          ReadCapacityUnits: 1
+          WriteCapacityUnits: 1
+        TableName: ${self:provider.environment.DYNAMODB_TABLE}
